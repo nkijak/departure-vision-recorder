@@ -1,0 +1,4 @@
+dv_data/
+*.pyc
+venv/
+tags
