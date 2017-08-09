@@ -20,6 +20,15 @@ class Departure(JSONEncoder):
         self.at = at
         self.color = color
 
+    def __eq__(self, other):
+        return self.train_id == other.train_id
+
+    def changed(self, other):
+        return self.__dict__ != other.__dict__
+
+    def __str__(self):
+        return self.__dict__.__str__()
+
 def json_serializer(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
