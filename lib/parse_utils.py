@@ -24,7 +24,11 @@ class Departure(JSONEncoder):
         return self.train_id == other.train_id
 
     def changed(self, other):
-        return self.__dict__ != other.__dict__
+        this = self.__dict__.copy()
+        del(this['at'])
+        that = other.__dict__.copy()
+        del(that['at'])
+        return this != that
 
     def __str__(self):
         return self.__dict__.__str__()
@@ -49,9 +53,7 @@ def list_departures(html, at=datetime.today()):
 
     """
     soup = BeautifulSoup(html, 'html.parser')
-    print(soup)
     trs = soup(attrs = {'class': 'table-row'})
-    print(trs)
     departures = []
     for tr in trs:
         style = tr.find('tr')['style']

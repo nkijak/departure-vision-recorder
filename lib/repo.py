@@ -11,9 +11,9 @@ class Repo(object):
         self.host = host
         self.port = port
 
-    def connect(self):
+    def connect(self, db_name=DB_NAME):
         self.couch = couchdb.Server("http://%s:%d" % (self.host, self.port))
-        self.db = self.__get_db()
+        self.db = self.__get_db(db_name)
 
     def save_departure(self, obj):
         return DepartureRecord.from_departure(obj).store(self.db)
@@ -22,7 +22,7 @@ class Repo(object):
         return obj.store(self.db)
 
 
-    def __get_db(self, name=DB_NAME):
+    def __get_db(self, name):
         try:
             return self.couch[name]
         except couchdb.http.ResourceNotFound:
@@ -30,7 +30,7 @@ class Repo(object):
 
     def __init_db(self, name):
         db = self.couch.create(name)
-        tracks_design = load_design_doc('couchdb/tracks')
+        tracks_design = load_design_doc('couchdb/%s/tracks' % name)
         # TODO figure out how to get design doc loaded
         return db
 

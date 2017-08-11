@@ -7,6 +7,8 @@ from lib.repo import Repo, Event
 def determine_change(old, new):
     changes = []
     for i, k in enumerate(old.__dict__):
+        if k == 'at':
+            continue
         if new.__dict__.get(k) != old.__dict__.get(k):
             changes.append(k)
     if len(changes) == 0:
@@ -70,16 +72,11 @@ def get_departures():
 
 if __name__=="__main__":
     repo = Repo("localhost", 5984)
-    repo.connect()
+    repo.connect("nyp_departure_events")
 
     source = Observable\
         .timer(200, 120000)\
-        .map(lambda: get_departures())\
-        .distinct_until_changed()\
+        .map(lambda _: get_departures())\
         .subscribe(DepartureStorage())
-
-
-
-    source.subscribe(DepartureStorage())
-
+        
     input("Press any key to quit\n")
