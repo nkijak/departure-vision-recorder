@@ -50,7 +50,6 @@ def get_dv_page(cache_path=CACHE_PATH, skip_cache=False):
     return (html, datetime.today())
 
 def extract_timestamp(filename):
-    print(filename.split("_"))
     _, station, iso = filename.split("_")
     iso = iso.split(".")[0]
     return dup.parse(iso)
