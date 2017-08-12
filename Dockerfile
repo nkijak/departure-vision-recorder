@@ -7,9 +7,11 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY lib .
+
+COPY lib ./lib
 COPY nypTracks.py .
 COPY nyp_track_events.py .
+VOLUME ./vd_data
 
-CMD ["python", "./nypTracks.py"]
+CMD ["python", "nypTracks.py"]
 
