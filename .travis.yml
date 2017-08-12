@@ -9,6 +9,7 @@ services:
 script: pytest
   
 after_success:
-  - docker build -t nkijak/departure-vision-recorder .
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-  - docker push nkijak/departure-vision-recorder
+  on: master
+    - docker build -t nkijak/departure-vision-recorder .
+    - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+    - docker push nkijak/departure-vision-recorder
