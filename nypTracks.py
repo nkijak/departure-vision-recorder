@@ -1,8 +1,12 @@
 from rx import Observable, Observer
+from rx.core import Scheduler
 
 import lib.page_utils as page
 import lib.parse_utils as parse
 from lib.repo import Repo, Event
+
+import sys
+import os
 
 def determine_change(old, new):
     changes = []
@@ -54,7 +58,7 @@ class DepartureStorage(Observer):
     def on_next(self, departures):
         events = changes_as_events(self.last_departures, departures)
         for event in events:
-            print(repo.save_event(event))
+            repo.save_event(event)
         self.last_departures = departures
 
     def on_completed(self):
@@ -62,6 +66,7 @@ class DepartureStorage(Observer):
 
     def on_error(self, error):
         print("Error getting departures: %s" % error)
+        sys.exit(1)
 
 
 
@@ -70,13 +75,25 @@ def get_departures():
     departures = parse.list_departures(html, timestamp)
     return departures
 
+def db_host_port():
+    try:
+        host = os.environ['DB_HOST']
+    except KeyError:
+        host = "localhost"
+    try:
+        port = os.environ['DB_PORT']
+    except KeyError:
+        port = 5984
+    return (host, port) 
+
 if __name__=="__main__":
-    repo = Repo("localhost", 5984)
+    db_host, port = db_host_port()
+    repo = Repo(db_host, port)
     repo.connect("nyp_departure_events")
 
     source = Observable\
-        .timer(200, 120000)\
+        .timer(200, 120000, Scheduler.thread_pool)\
         .map(lambda _: get_departures())\
         .subscribe(DepartureStorage())
-        
-    input("Press any key to quit\n")
+
+    Scheduler.thread_pool.executor.shutdown() 

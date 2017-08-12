@@ -1,4 +1,15 @@
 language: python
+
 python:
-  - "3.5"
+  - "3.6"
+
+services:
+  - docker
+
 script: pytest
+  
+after_success:
+  on: master
+    - docker build -t nkijak/departure-vision-recorder .
+    - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+    - docker push nkijak/departure-vision-recorder
