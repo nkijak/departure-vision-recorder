@@ -9,9 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 COPY lib ./lib
+COPY couchdb ./couchdb
 COPY nypTracks.py .
 COPY nyp_track_events.py .
-VOLUME ./vd_data
+VOLUME /usr/src/app/dv_data
 
 CMD ["python", "nypTracks.py"]
 
