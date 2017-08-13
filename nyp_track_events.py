@@ -29,7 +29,7 @@ class DepartureStorage(Observer):
 
 if __name__=="__main__":
     repo = Repo("localhost", 5984)
-    repo.connect("nyp_departure_events")
+    repo.connect("nyp_departure_testing", design_name='nyp_departure_events')
 
     f = os.listdir("dv_data")
     f.sort()
