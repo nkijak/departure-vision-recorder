@@ -58,6 +58,11 @@ class Repo(object):
             return self.couch[name]
         except couchdb.http.ResourceNotFound:
             return self.__init_db(name)
+        except couchdb.http.ServerError as se:
+            status, _ = se.args[0]
+            if status == 400:
+                return self.__init_db(name)
+            raise se
 
     def __init_db(self, name):
         db = self.couch.create(name)

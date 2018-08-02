@@ -2,3 +2,6 @@ dv_data/
 *.pyc
 venv/
 tags
+
+.pytest_cache/
+htmlcov/

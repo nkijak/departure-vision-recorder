@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  tracker:
+  ny_tracker:
     image: nkijak/departure-vision-recorder
     volumes:
       - raw-storage:/usr/src/app/dv_data
@@ -9,6 +9,16 @@ services:
       - couchdb
     environment:
       - DB_HOST=couchdb
+      - STATION=NY
+  tre_tracker:
+    image: nkijak/departure-vision-recorder
+    volumes:
+      - raw-storage:/usr/src/app/dv_data
+    depends_on:
+      - couchdb
+    environment:
+      - DB_HOST=couchdb
+      - STATION=TR
     
   couchdb:
     image: couchdb:1.6

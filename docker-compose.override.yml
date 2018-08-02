@@ -1,5 +1,10 @@
 version: "3"
 
 services:
-  tracker:
+  ny_tracker:
     build: .
+  tre_tracker:
+    build: .
+  couchdb:
+    ports:
+      - "5984:5984"
