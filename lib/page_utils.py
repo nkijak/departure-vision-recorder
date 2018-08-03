@@ -3,13 +3,17 @@ import os
 from datetime import datetime
 import dateutil.parser as dup
 
+STATIONS={
+    'TRE': 'TR',
+    'NYP': 'NY',
+}
 DV_BASE="http://dv.njtransit.com/mobile/tid-mobile.aspx?sid="
 NYP="NY"
 CACHE_PATH="dv_data"
 
 
 def fetch_dv_page(station=NYP):
-    url = DV_BASE + NYP
+    url = DV_BASE + station
     with urllib.request.urlopen(url) as response:
         html = response.read()
     return html
@@ -23,7 +27,7 @@ def cache_dv_page(page, station=NYP, path=CACHE_PATH):
         f.write(page)
     return os.path.join(path, name)
 
-def get_dv_page(cache_path=CACHE_PATH, skip_cache=False):
+def get_dv_page(station=NYP, cache_path=CACHE_PATH, skip_cache=False):
     """Fetches the latest cached file or pulls from the web
 
     Args:
@@ -45,8 +49,8 @@ def get_dv_page(cache_path=CACHE_PATH, skip_cache=False):
         except IndexError:
             pass
 
-    html = fetch_dv_page()
-    latest = cache_dv_page(html, path=cache_path)
+    html = fetch_dv_page(station)
+    latest = cache_dv_page(html, station=station, path=cache_path)
     return (html, datetime.today())
 
 def extract_timestamp(filename):

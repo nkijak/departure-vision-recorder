@@ -16,8 +16,8 @@ class DepartureStorage(Observer):
     def on_next(self, departures):
         events = changes_as_events(self.last_departures, departures)
         for event in events:
-            #print(event.__dict__)
-            print(repo.save_event(event))
+            print(event.__dict__)
+            #print(repo.save_event(event))
         self.last_departures = departures
 
     def on_completed(self):

@@ -70,8 +70,8 @@ class DepartureStorage(Observer):
 
 
 
-def get_departures():
-    html, timestamp = page.get_dv_page(skip_cache=True)
+def get_departures(station):
+    html, timestamp = page.get_dv_page(station=station, skip_cache=True)
     departures = parse.list_departures(html, timestamp)
     return departures
 
@@ -89,11 +89,14 @@ def db_host_port():
 if __name__=="__main__":
     db_host, port = db_host_port()
     repo = Repo(db_host, port)
-    repo.connect("nyp_departure_events")
+    station = os.environ.get('STATION', 'NY')
+    repo.connect(
+            db_name="{}_departure_events".format(station.lower()), 
+            design_name='nyp_departure_events')
 
     source = Observable\
         .timer(200, 120000, Scheduler.thread_pool)\
-        .map(lambda _: get_departures())\
+        .map(lambda x, y: get_departures(station=station))\
         .subscribe(DepartureStorage())
 
     Scheduler.thread_pool.executor.shutdown() 
