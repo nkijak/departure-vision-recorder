@@ -3,10 +3,6 @@ import os
 from datetime import datetime
 import dateutil.parser as dup
 
-STATIONS={
-    'TRE': 'TR',
-    'NYP': 'NY',
-}
 DV_BASE="http://dv.njtransit.com/mobile/tid-mobile.aspx?sid="
 NYP="NY"
 CACHE_PATH="dv_data"

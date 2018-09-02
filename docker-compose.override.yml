@@ -5,6 +5,14 @@ services:
     build: .
   tre_tracker:
     build: .
+  hamilton_tracker:
+    build: .
+  princeton_junction_tracker:
+    build: .
+  newark_penn_tracker:
+    build: .
+  secaucus_lower_tracker:
+    build: .
   couchdb:
     ports:
       - "5984:5984"

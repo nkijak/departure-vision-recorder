@@ -1,12 +1,13 @@
+import sys
+import os
+from random import randint
+
 from rx import Observable, Observer
 from rx.core import Scheduler
 
 import lib.page_utils as page
 import lib.parse_utils as parse
 from lib.repo import Repo, Event
-
-import sys
-import os
 
 def determine_change(old, new):
     changes = []
@@ -66,7 +67,7 @@ class DepartureStorage(Observer):
 
     def on_error(self, error):
         print("Error getting departures: %s" % error)
-        sys.exit(1)
+        # sys.exit(1)
 
 
 
@@ -83,7 +84,7 @@ def db_host_port():
     try:
         port = os.environ['DB_PORT']
     except KeyError:
-        port = 5984
+        port = 5985
     return (host, port) 
 
 if __name__=="__main__":
@@ -94,9 +95,11 @@ if __name__=="__main__":
             db_name="{}_departure_events".format(station.lower()), 
             design_name='nyp_departure_events')
 
+    # TODO handle network errors with Rx
     source = Observable\
-        .timer(200, 120000, Scheduler.thread_pool)\
+        .timer(randint(200, 60000), 120000, Scheduler.thread_pool)\
         .map(lambda x, y: get_departures(station=station))\
+        .retry()\
         .subscribe(DepartureStorage())
 
     Scheduler.thread_pool.executor.shutdown() 

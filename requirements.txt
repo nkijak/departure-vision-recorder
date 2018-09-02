@@ -14,3 +14,5 @@ simplegeneric==0.8.1
 six==1.10.0
 traitlets==4.3.2
 wcwidth==0.1.7
+python_cypher==0.11.1
+neo4j-driver==1.6.1

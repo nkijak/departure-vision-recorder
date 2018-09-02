@@ -10,7 +10,7 @@ import re
 STYLE_REGEX=re.compile('.+background-color:(\w+);')
 
 class Departure(JSONEncoder):
-    def __init__(self, departs_at, dest, track, line, train_id, status=None, at=datetime.today(), color=""):
+    def __init__(self, departs_at, dest, track, line, train_id, status=None, at=datetime.utcnow(), color=""):
         self.departs_at = departs_at
         self.dest = dest
         self.track = track
@@ -41,7 +41,7 @@ def json_serializer(obj):
         return obj.__dict__
 
 
-def list_departures(html, at=datetime.today()):
+def list_departures(html, at=datetime.utcnow()):
     """The web scraping function.  When things go wrong, look here.
 
     Args:

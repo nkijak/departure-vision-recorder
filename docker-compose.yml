@@ -19,6 +19,42 @@ services:
     environment:
       - DB_HOST=couchdb
       - STATION=TR
+  hamilton_tracker:
+    image: nkijak/departure-vision-recorder
+    volumes:
+      - raw-storage:/usr/src/app/dv_data
+    depends_on:
+      - couchdb
+    environment:
+      - DB_HOST=couchdb
+      - STATION=HL
+  princeton_junction_tracker:
+    image: nkijak/departure-vision-recorder
+    volumes:
+      - raw-storage:/usr/src/app/dv_data
+    depends_on:
+      - couchdb
+    environment:
+      - DB_HOST=couchdb
+      - STATION=PJ
+  newark_penn_tracker:
+    image: nkijak/departure-vision-recorder
+    volumes:
+      - raw-storage:/usr/src/app/dv_data
+    depends_on:
+      - couchdb
+    environment:
+      - DB_HOST=couchdb
+      - STATION=NP
+  secaucus_lower_tracker:
+    image: nkijak/departure-vision-recorder
+    volumes:
+      - raw-storage:/usr/src/app/dv_data
+    depends_on:
+      - couchdb
+    environment:
+      - DB_HOST=couchdb
+      - STATION=SE
     
   couchdb:
     image: couchdb:1.6
