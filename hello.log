@@ -1,0 +1,5 @@
+INFO     Hello actor got: are you there?
+INFO     Hello actor got: are you there?
+INFO     Hello actor got: ActorExitRequest
+INFO     Hello actor got: ChildActorExited:ActorAddr-(T|:32937)
+INFO     ActorSystem Logging Shutdown

@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 
 from datetime import datetime
-import lib.page_utils as page
 
 from json import JSONEncoder
 
