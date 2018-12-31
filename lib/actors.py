@@ -25,7 +25,7 @@ class Networking(Actor):
             logging.info("getting departures for " + message.payload)
             print("getting departures for " + message.payload)
             html, timestamp = page.get_dv_page(station=message.payload, skip_cache=True)
-            departures = parse.list_departures(html, timestamp)
+            departures = parse.list_departures(html, timestamp, message.payload)
 
             self.send(sender, Message(Station.UPDATE, departures))
         else: 
@@ -37,11 +37,13 @@ class Dispatcher(Actor):
     #TODO is there a way to iterate over children?
 
     def receiveMessage(self, message, sender):
-        print("Dispatcher:{}".format(message))
+        #import pdb; pdb.set_trace()
+        if isinstance(message, PoisonMessage):
+            logging.warn("Poison:{}".format(message))
+            return
         if message.msg == Dispatcher.UPDATE:
             id = message.payload.train_id
             logging.info("Updating train {}".format(id))
-            print("Updating train {}".format(id))
             train = self.createActor(Train, globalName=id)
             self.send(train, message.payload)
         else:
@@ -53,10 +55,18 @@ class Station(Actor):
     networking = None
     dispatcher = None
     
+    def __init__(self):
+        self.id = None
+
     def receiveMessage(self, message, sender):
         if message.msg == Station.WATCH:
-            self.send(Station.networking, Networking.list_departures(message.payload))
+            self.id = message.payload
+            logging.info('listing departures at {}'.format(self.id))
+            print('listing departures at {}'.format(self.id))
+            self.send(Station.networking, Networking.list_departures(self.id))
         elif message.msg == Station.UPDATE:
+            logging.info("updating {} departures ".format(len(message.payload)))
+            print("updating {} departures ".format(len(message.payload)))
             for departure in message.payload:
                 self.send(Station.dispatcher, Message(Dispatcher.UPDATE, departure))
         else:
@@ -70,7 +80,7 @@ class Train(ActorTypeDispatcher):
         self.carrier = None
         self.line = None
 
-    def determine_change(old, new):
+    def determine_change(self, old, new):
         changes = []
         for i, k in enumerate(old.__dict__):
             if k == 'at':
@@ -88,18 +98,17 @@ class Train(ActorTypeDispatcher):
         #    #TODO how do i know if this was because train is idle or if shutdown?
         #    pass
         #elif not self.last_departure:
-        print("{} Last departure? {}".format(self.myAddress, self.last_departure))
         if not self.last_departure:
-            self.id = departure['train_id']
-            self.color = departure['color']
-            self.line = departure['line']
+            self.id = departure.train_id
+            self.color = departure.color
+            self.line = departure.line
             new = Event.new_departure(departure)
             logging.info("New departure: {}".format(new))
-            print("New departure: {}".format(new))
+            print("NEW DEPARTURE: {}".format(new))
         elif self.last_departure.changed(departure):
-            change = determine_change(self.last_departure, departure)
+            change = self.determine_change(self.last_departure, departure)
             logging.info("change: {}".format(change))
-            print("change: {}".format(change))
+            print("CHANGE: {}".format(change))
         else:
             pass
 

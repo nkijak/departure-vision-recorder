@@ -4,8 +4,8 @@ from lib.tracks import changes_as_events, pipeline
 import unittest
 from unittest.mock import MagicMock, patch
 
-TRENTON_123=Departure("11:00", "Trenton", "", "NEC", "123")
-BAY_HEAD_345=Departure("11:10", "Bay Head", "", "whatever", "345")
+TRENTON_123=Departure("tre", "11:00", "Trenton", "", "NEC", "123")
+BAY_HEAD_345=Departure("tre", "11:10", "Bay Head", "", "whatever", "345")
 
 class TestNypTracks(unittest.TestCase):
     def test_new_departures(self):
