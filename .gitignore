@@ -5,3 +5,5 @@ tags
 
 .pytest_cache/
 htmlcov/
+template
+build

@@ -1,0 +1,12 @@
+provider:
+  name: faas
+  gateway: http://127.0.0.1:8080
+functions:
+  fetch:
+    lang: python-armhf
+    handler: ./faas
+    image: nkijak/armhf-dvr-fetch:latest
+    environment:
+      AWS_ACCESS_KEY_ID: minio-supersixfour
+      AWS_SECRET_ACCESS_KEY: roufxisrepus-oinim
+      write_timeout: 30s
