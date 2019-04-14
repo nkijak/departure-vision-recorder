@@ -1,2 +1,3 @@
 boto3==1.9.101
 beautifulsoup4==4.6.0
+CouchDB==1.1

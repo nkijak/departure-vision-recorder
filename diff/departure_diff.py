@@ -122,3 +122,6 @@ class DepartureDiff(object):
         changes = self.changes_as_events(prev_dep, current_dep)
 
         return changes
+
+    def store_diff(self, bucket, key, diff_as_json):
+        self.client.put_object(Bucket=bucket, Key=key, Body=diff_as_json.encode('utf-8'))
