@@ -1,3 +1,4 @@
+from datetime import datetime
 from botocore.stub import Stubber
 from diff.handler import handle, DepartureDiff
 import boto3
@@ -13,7 +14,7 @@ def test_handle_happy_path():
               'LastModified': datetime(2015, 1, 1),
               'ETag': 'string',
               'Size': 123,
-              'StorageClass': 'STANDARD' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'STANDARD_IA' | 'ONEZONE_IA' | 'INTELLIGENT_TIERING' | 'DEEP_ARCHIVE',
+              'StorageClass': 'STANDARD',
               'Owner': {
                   'DisplayName': 'string',
                   'ID': 'string'

@@ -34,7 +34,7 @@ def cache_dv_page(page, station=NYP, path=CACHE_PATH, bucketname=BUCKET):
     )
     bucket = s3.Bucket(bucketname)
     now = datetime.today()
-    name = "{}/{}/{}/{}/{}/dv_{}.html".format(path,now.year, now.month, now.day, station, now.isoformat())
+    name = "{}/{}/{}/dv_{}.html".format(path, station, now.strftime('%Y/%m/%d'), now.isoformat())
     bucket.put_object(Key=name, Body=page)
     return os.path.join(bucketname, name)
 
