@@ -24,7 +24,7 @@ class Event(object):#Document):
     def new_departure(added):
         return Event(action = 'added', context = '_window', new = added.__dict__, old = None)
 
-class Departure(JSONEncoder):
+class Departure(object):
     def __init__(self, departs_at, dest, track, line, train_id, status=None, at=datetime.today(), color=""):
         self.departs_at = departs_at
         self.dest = dest
@@ -48,9 +48,14 @@ class Departure(JSONEncoder):
     def __str__(self):
         return self.__dict__.__str__()
 
-def json_serializer(obj):
-    if isinstance(obj, datetime):
-        return obj.isoformat()
 
-    if isinstance(obj, Departure):
-        return obj.__dict__
+class Encoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+        if isinstance(obj, Departure):
+            return obj.__dict__
+
+        if isinstance(obj, Event):
+            return obj.__dict__

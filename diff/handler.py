@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from .departure_diff import DepartureDiff
+from .models import Encoder
 
 def handle(req, departure_diff=None):
     event = json.loads(req)
@@ -11,4 +12,4 @@ def handle(req, departure_diff=None):
         departure_diff=DepartureDiff()
     changes = departure_diff.diff_last_based_on(key)
 
-    return req
+    return json.dumps(changes, cls=Encoder)

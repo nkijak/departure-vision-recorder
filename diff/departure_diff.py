@@ -107,6 +107,7 @@ class DepartureDiff(object):
         prev = objects['Contents'][i - 1]
         print("compairing {} to {}".format(path, prev['Key']))
         return prev['Key']
+
     
     def diff_last_based_on(self, key):
         parts = key.split('/')

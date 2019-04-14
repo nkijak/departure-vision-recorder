@@ -1,3 +1,4 @@
+import json
 from diff.models import Departure
 from diff.departure_diff import DepartureDiff
 import pytest
@@ -60,6 +61,7 @@ def test_determine_last_since_on_day_border(expected, key):
             {'Key': expected},
             {'Key': key}
         ]
+        expected = {}
     }
     stub.add_response('list_objects_v2', list_response, expected_list_req)
     expected_get_req = {
@@ -70,3 +72,16 @@ def test_determine_last_since_on_day_border(expected, key):
         dd = DepartureDiff(client)
         actual = dd.determine_last_since(bucket, key)
         assert expected == actual 
+
+# def test_last_based_on_json():
+#     client = boto3.client('s3')
+#     stub = Stubber(client)
+#     bucket = 'com.kinnack.departure-vision-recorder' 
+#     key = 'dv_data/NY/2017/08/05/dv_2017-08-05T16:32:05.960042.html'
+#     dd = DepartureDiff(client)
+#     expected = {}
+#     stub.add_response('')
+#     with stub:
+#         changes_json = dd.diff_last_based_on("{}/{}".format(bucket, key))
+#         actual = json.loads(changes_json)
+#         assert expected == actual
