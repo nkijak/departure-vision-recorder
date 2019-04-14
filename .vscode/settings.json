@@ -1,0 +1,9 @@
+{
+    "python.unitTest.pyTestArgs": [
+        "test"
+    ],
+    "python.unitTest.unittestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.pyTestEnabled": true,
+    "python.pythonPath": "/home/prodrive555/.pyenv/versions/track_select/bin/python"
+}

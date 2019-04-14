@@ -1,19 +1,25 @@
 from datetime import datetime, timedelta
 import re
+import os
 
 import boto3
 from bs4 import BeautifulSoup
 from .models import Departure, Event
 
+
 STYLE_REGEX=re.compile('.+background-color:(\w+);')
+S3_HOST=os.environ.get('S3_HOST', 'http://192.168.1.211:9000')
+S3_ACCESS_ID=os.environ.get('AWS_ACCESS_KEY_ID', 'minio-supersixfour')
+S3_SECRET_KEY=os.environ.get('AWS_SECRET_ACCESS_ID', 'roufxisrepus-oinim')
+
 
 class DepartureDiff(object):
     def __init__(self, client=None):
         self.client=client if client else \
             boto3.client('s3',
-                    endpoint_url='http://192.168.1.211:9000',
-                    aws_access_key_id='minio-supersixfour',
-                    aws_secret_access_key='roufxisrepus-oinim')
+                    endpoint_url=S3_HOST,
+                    aws_access_key_id=S3_ACCESS_ID,
+                    aws_secret_access_key=S3_SECRET_KEY)
 
     def list_departures(self, html, at=datetime.today()):
         """The web scraping function.  When things go wrong, look here.

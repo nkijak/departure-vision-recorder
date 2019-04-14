@@ -13,6 +13,7 @@ DV_BASE="http://dv.njtransit.com/mobile/tid-mobile.aspx?sid="
 NYP="NY"
 CACHE_PATH="dv_data"
 BUCKET="com.kinnack.departure-vision-recorder"
+S3_HOST=os.environ.get('S3_HOST', 'http://192.168.1.211:9000')
 
 def handle(req):
     if req:
@@ -30,7 +31,7 @@ def fetch_dv_page(station=NYP):
 
 def cache_dv_page(page, station=NYP, path=CACHE_PATH, bucketname=BUCKET):
     s3 = boto3.resource('s3',
-      endpoint_url='http://192.168.1.211:9000'
+      endpoint_url=S3_HOST
     )
     bucket = s3.Bucket(bucketname)
     now = datetime.today()
