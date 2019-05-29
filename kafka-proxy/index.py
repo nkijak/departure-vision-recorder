@@ -20,9 +20,11 @@ def catch_all(path):
     p.flush()
     try:
         result.get(timeout=10)
+        print('topic: {}, key: {}, data:{}'.format(path, key, request.data))
         return 'topic: {}, key: {}, data:{}'.format(path, key, request.data)
-    except KafkaError:
-        return 500, 'topic: {}, key: {}, data:{}'.format(path, key, request.data)
+    except KafkaError as ke:
+        print('ERROR topic: {}, key: {}, data:{}'.format(path, key, request.data))
+        raise ke 
 
 if __name__ == '__main__':
     serve(app, listen='*:5000')
