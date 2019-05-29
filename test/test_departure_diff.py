@@ -58,10 +58,8 @@ def test_determine_last_since_on_day_border(expected, key):
     }
     list_response = {
         'Contents': [
-            {'Key': expected},
             {'Key': key}
         ]
-        expected = {}
     }
     stub.add_response('list_objects_v2', list_response, expected_list_req)
     expected_get_req = {
