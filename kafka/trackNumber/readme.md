@@ -12,7 +12,7 @@ kafka.consumer-groups --list --bootstrap-server mac-mini:9092
 To look at consumer groups' offsets use
 ```
 watch -d kafka.consumer-groups --describe --group $groupid --bootstrap-server mac-mini:9092
-``
+```
 
 
 And finally, to reset a consumer group to the earliest available (see `kafka.consumer-groups --help` for other options)
