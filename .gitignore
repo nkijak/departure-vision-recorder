@@ -7,3 +7,5 @@ tags
 htmlcov/
 template
 build
+
+node_modules/

@@ -1,0 +1,10 @@
+{
+  "noptions": {
+    "group.id": "kinnack-dvr-node-diff",
+    "client.id": "dvr-tracknumber",
+    "enable.auto.commit": false
+  },
+  "tconf": {
+    "auto.offset.reset": "earliest"
+  }
+}
