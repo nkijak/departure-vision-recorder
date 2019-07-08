@@ -1,0 +1,3 @@
+{"headers": {}, "body": {"departures":  [
+  {"departs_at":  "departsAt", "dest":  "dest", "track": "track", "line":  "line", "train_id":  "trainId", "status":  "status", "at": "at", "color":  "color"}
+], "objectKey": ""}}
