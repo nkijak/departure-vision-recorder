@@ -1,0 +1,47 @@
+provider:
+  name: faas
+  gateway: http://node031:8080
+functions:
+  fetch:
+    lang: python3-armhf
+    handler: ./faas
+    image: nkijak/armhf-dvr-fetch:latest
+    environment:
+      AWS_ACCESS_KEY_ID: minio-supersixfour
+      AWS_SECRET_ACCESS_KEY: roufxisrepus-oinim
+      write_timeout: 30s
+      write_debug: true
+  dvr-diff:
+    lang: python3-armhf
+    handler: ./diff
+    image: nkijak/armhf-dvr-diff:latest
+    environment:
+      AWS_ACCESS_KEY_ID: minio-supersixfour
+      AWS_SECRET_ACCESS_KEY: roufxisrepus-oinim
+      write_timeout: 30s
+      write_debug: true
+  store-diff:
+    lang: python3-armhf
+    handler: ./store-diff
+    image: nkijak/armhf-dvr-store-diff:latest
+    environment:
+      DB_HOST: 192.168.1.211
+      DB_PORT: 5984
+      write_timeout: 30s
+      write_debug: true
+  sync-db:
+    lang: python3-armhf
+    handler: ./couchdb
+    image: nkijak/armhf-dvr-sync-db:latest
+    environment:
+      DB_HOST: 192.168.1.211
+      DB_PORT: 5984
+      write_timeout: 30s
+      write_debug: true
+  kafka-proxy:
+    lang: dockerfile
+    handler: ./kafka-proxy
+    image: nkijak/armhf-kafka-proxy:latest
+    environment:
+      KAFKA: "192.168.1.211:9092"
+    

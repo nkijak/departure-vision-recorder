@@ -1,0 +1,53 @@
+{
+  "EventName": "s3:ObjectCreated:Put",
+  "Key": "com.kinnack.departure-vision-recorder/dv_data/test",
+  "Records": [
+    {
+      "eventVersion": "2.0",
+      "eventSource": "minio:s3",
+      "awsRegion": "",
+      "eventTime": "2019-02-23T04:25:21Z",
+      "eventName": "s3:ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "minio-supersixfour"
+      },
+      "requestParameters": {
+        "accessKey": "minio-supersixfour",
+        "region": "",
+        "sourceIPAddress": "192.168.1.236"
+      },
+      "responseElements": {
+        "x-amz-request-id": "1585E39F91AB9CFB",
+        "x-minio-deployment-id": "6faf2120-a106-470a-b0f7-d4d6ad09e0cd",
+        "x-minio-origin-endpoint": "http://172.17.0.4:9000"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "Config",
+        "bucket": {
+          "name": "com.kinnack.departure-vision-recorder",
+          "ownerIdentity": {
+            "principalId": "minio-supersixfour"
+          },
+          "arn": "arn:aws:s3:::com.kinnack.departure-vision-recorder"
+        },
+        "object": {
+          "key": "dv_data%2Ftest",
+          "size": 335,
+          "eTag": "60b1738551856f2506a63e41940e97db",
+          "contentType": "application/json",
+          "userMetadata": {
+            "content-type": "application/json"
+          },
+          "versionId": "1",
+          "sequencer": "1585E39F93FA1A03"
+        }
+      },
+      "source": {
+        "host": "",
+        "port": "",
+        "userAgent": "Minio (linux; amd64) minio-go/v6.0.17 mc/2019-02-20T22:21:50Z"
+      }
+    }
+  ]
+}

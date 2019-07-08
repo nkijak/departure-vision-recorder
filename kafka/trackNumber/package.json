@@ -1,0 +1,21 @@
+{
+  "name": "tracknumber",
+  "version": "0.1.0",
+  "description": "pull train station and track info from kafka stream",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.20.0",
+    "deep-object-diff": "^1.1.0",
+    "help": "^3.0.2",
+    "kafka-streams": "^4.11.0",
+    "table": "^5.4.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.1.4"
+  }
+}

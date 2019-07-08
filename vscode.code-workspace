@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.unitTest.pyTestEnabled": true,
+		"python.venvPath": " ~/.pyenv"
+	}
+}
