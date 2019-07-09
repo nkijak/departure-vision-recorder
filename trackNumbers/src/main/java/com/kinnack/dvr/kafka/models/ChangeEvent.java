@@ -1,5 +1,6 @@
 package com.kinnack.dvr.kafka.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
@@ -10,6 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ChangeEvent {
+    public static final String ADDED = "added";
+    public static final String DROPPED = "dropped";
+    public static final String WINDOW = "_window";
     private String action;
     private String context;
     private Departure was;
@@ -42,12 +46,21 @@ public class ChangeEvent {
         return now;
     }
 
+    @JsonIgnore
+    public boolean isDropped() {
+        return action.equals(DROPPED);
+    }
+    @JsonIgnore
+    public boolean isAdded() {
+        return action.equals(ADDED);
+    }
+
     public static ChangeEvent added(Departure departure) {
-        return new ChangeEvent("added", "_window", null, departure);
+        return new ChangeEvent(ADDED, WINDOW, null, departure);
     }
 
     public static ChangeEvent dropped(Departure departure) {
-        return new ChangeEvent("dropped", "_window", departure, null);
+        return new ChangeEvent(DROPPED, WINDOW, departure, null);
     }
 
     public static Optional<ChangeEvent> changed(Departure was, Departure now) {

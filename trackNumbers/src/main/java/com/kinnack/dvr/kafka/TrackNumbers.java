@@ -103,10 +103,25 @@ public class TrackNumbers {
                             .collect(Collectors.toList())
                 )
         );
-        departures
-                .transform(() -> new DiffProcessor(), DiffProcessor.DIFF_STATE_STORE)
-                .to(inTopic + ".diff", Produced.with(Serdes.String(), changeEventSerDe));
+        KStream<String, ChangeEvent> diffStream = departures
+                .transform(() -> new DiffProcessor(), DiffProcessor.DIFF_STATE_STORE);
 
+        KTable<String, Departure> departureBoard = diffStream
+                .groupBy(
+                        (station, event) -> Optional.ofNullable(event.getWas()).orElse(event.getNow()).getTrainId(),
+                        Grouped.with(Serdes.String(), changeEventSerDe))
+                .aggregate(
+                    () -> null,
+                    (trainId, event, prev) -> {
+                        if (!event.isDropped()) {
+                            return Optional.ofNullable(event.getNow()).orElse(event.getWas());
+                        }
+                        return null;
+                    },
+                    Materialized.with(Serdes.String(), departureSerde)
+                );
+
+        diffStream.to(inTopic + ".diff", Produced.with(Serdes.String(), changeEventSerDe));
 
         return builder.build();
     }
