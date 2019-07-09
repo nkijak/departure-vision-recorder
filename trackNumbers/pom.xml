@@ -75,7 +75,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <repository>nkijak/${project.artifactId}</repository>
+                    <!-- <repository>nkijak/${project.artifactId}</repository> -->
+                    <repository>nkijak/dvr-diff-stream</repository>
                     <tag>${project.version}</tag>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
