@@ -6,7 +6,7 @@ python:
 services:
   - docker
 
-script: pytest
+script: "pytest test"
   
 after_success:
   on: master

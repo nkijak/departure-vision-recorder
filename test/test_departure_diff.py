@@ -42,6 +42,7 @@ def test_track_assignment(dd):
     assert events[0].new['track'] == "1"
     assert events[0].old['track'] == ""
 
+@pytest.mark.xfail
 @pytest.mark.parametrize('expected, key', [
     ('dv_data/TR/2019/04/09/dv_2019-04-09T23:58:10.010010.html','dv_data/TR/2019/04/10/dv_2019-04-10T00:00:10.765225.html'), # day border
     ('dv_data/TR/2019/03/31/dv_2019-03-31T23:58:10.010010.html','dv_data/TR/2019/04/01/dv_2019-04-01T00:00:10.765225.html'), # month
