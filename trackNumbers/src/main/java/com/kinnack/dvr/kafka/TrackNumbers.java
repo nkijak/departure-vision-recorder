@@ -3,6 +3,7 @@ package com.kinnack.dvr.kafka;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.kinnack.dvr.kafka.models.*;
+import com.kinnack.dvr.kafka.models.ChangeEvent.ChangeEventOps;
 import org.apache.commons.cli.*;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -15,11 +16,14 @@ import org.apache.kafka.connect.json.JsonSerializer;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.kinnack.dvr.kafka.models.ChangeEvent.ChangeEventOps.*;
 import static com.kinnack.dvr.kafka.models.JsonPOJODeserializer.*;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Stream.*;
@@ -50,6 +54,8 @@ public class TrackNumbers {
     final public Serde<List<Departure>> listDepartureSerde;
     final public Serde<ChangeEvent> changeEventSerDe;
     final public Serde<JsonNode> jsonSerde;
+    final public Serde<HashMap<String, String>> trackCountSerDe;
+    final public Serde<HashMap<String, HashMap<String, Integer>>> trackStatsSerDe;
 
     public TrackNumbers() {
         // TODO get rid of this and use the departureSerializer
@@ -59,10 +65,7 @@ public class TrackNumbers {
         jsonSerde = Serdes.serdeFrom(jsonSerializer, jsonDeserializer);
 
         // example of how to make a flat json SerDe
-        final Serializer<Departure> departureSerializer = new JsonPOJOSerializer<>();
-        final Deserializer<Departure> departureDeserializer = new JsonPOJODeserializer<>();
-        departureDeserializer.configure(Map.of(JSON_POJO_CLASS, Departure.class), false);
-        departureSerde = Serdes.serdeFrom(departureSerializer, departureDeserializer);
+        departureSerde = getSerDe(Departure.class);
 
         //-----
         final Serializer<List<Departure>> listDepartureSerializer = new JsonPOJOSerializer<>();
@@ -76,6 +79,30 @@ public class TrackNumbers {
         final Deserializer<ChangeEvent> changeEventDeserializer = new JsonPOJODeserializer<>();
         changeEventDeserializer.configure(Map.of(JSON_POJO_TYPE, changeEventReference), false);
         changeEventSerDe = Serdes.serdeFrom(changeEventSerializer, changeEventDeserializer);
+
+        //-----
+        final TypeReference<HashMap<String, String>> trackCountReference =  new TypeReference<>() { };
+        final Serializer<HashMap<String, String>> trackCountSerializer = new JsonPOJOSerializer<>();
+        final Deserializer<HashMap<String, String>> trackCountDeserializer = new JsonPOJODeserializer<>();
+        trackCountDeserializer.configure(Map.of(JSON_POJO_TYPE, trackCountReference), false);
+        trackCountSerDe = Serdes.serdeFrom(trackCountSerializer, trackCountDeserializer);
+
+        //-----
+        trackStatsSerDe = getSerDe(new TypeReference<>(){});
+    }
+
+    public <T> Serde<T> getSerDe(Class<T> klass) {
+        final Serializer<T> serializer = new JsonPOJOSerializer<>();
+        final Deserializer<T> deserializer = new JsonPOJODeserializer<>();
+        deserializer.configure(Map.of(JSON_POJO_CLASS, klass), false);
+        return Serdes.serdeFrom(serializer, deserializer);
+    }
+
+    public <T> Serde<T> getSerDe(TypeReference<T> ref) {
+        final Serializer<T> serializer = new JsonPOJOSerializer<>();
+        final Deserializer<T> deserializer = new JsonPOJODeserializer<>();
+        deserializer.configure(Map.of(JSON_POJO_TYPE, ref), false);
+        return Serdes.serdeFrom(serializer, deserializer);
     }
 
     public KGroupedStream<String, Departure> groupByTrainId(KStream<String, List<Departure>> departures) {
@@ -113,7 +140,7 @@ public class TrackNumbers {
                 .aggregate(
                     () -> null,
                     (trainId, event, prev) -> {
-                        if (!event.isDropped()) {
+                        if (!isDropped(event)) {
                             return Optional.ofNullable(event.getNow()).orElse(event.getWas());
                         }
                         return null;
@@ -122,6 +149,66 @@ public class TrackNumbers {
                 );
 
         diffStream.to(inTopic + ".diff", Produced.with(Serdes.String(), changeEventSerDe));
+
+        diffStream
+                .filter((stationId, changeEvent) -> isDropped(changeEvent))
+                .groupByKey(Grouped.with(Serdes.String(), changeEventSerDe))
+                .windowedBy(TimeWindows.of(Duration.ofDays(1)))
+                .aggregate(
+                        () -> new HashMap<String, String>(),
+                        (stationId, event, trackByTrainId) -> {
+                            String track = Optional.ofNullable(event.getWas().getTrack()).orElseGet(() -> {
+                                if (isCancelled(event)) return "-1";
+                                return "-2";
+                            });
+                            trackByTrainId.put(getTrainId(event), track);
+                            return trackByTrainId;
+                        },
+                        Materialized.with(Serdes.String(), trackCountSerDe)
+                )
+                .toStream()
+                .flatMap((windowedStationId, trackByTrainId) ->
+                        trackByTrainId.entrySet().stream()
+                                .map((entry) ->
+                                        KeyValue.pair(
+                                                String.join("::", List.of(windowedStationId.window().startTime().toString(), windowedStationId.key(), entry.getKey())),
+                                                entry.getValue()
+                                        ))
+                                .collect(Collectors.toList())
+                )
+                .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+                .windowedBy(TimeWindows.of(Duration.ofDays(5)).advanceBy(Duration.ofDays(1)))
+                .aggregate(
+                        () -> new HashMap<String, HashMap<String, Integer>>(),
+                        (dayStationTrainId, track, stats) -> {
+                            String[] parts = dayStationTrainId.split("::");
+                            String trainId = parts[parts.length - 1];
+                            HashMap<String, Integer> tracks = stats.getOrDefault(trainId, new HashMap<>());
+                            int count = tracks.getOrDefault(track, 0);
+                            tracks.put(track, count + 1);
+                            stats.put(trainId, tracks);
+                            return stats;
+                        },
+                        Materialized.with(Serdes.String(), trackStatsSerDe)
+                )
+                .toStream()
+                .map((k, v) -> KeyValue.pair(k.key(), v))
+                .peek((k, stats) -> {
+                    logger.info(k);
+                })
+                .to(inTopic + ".hopping_track_stats", Produced.with(Serdes.String(), trackStatsSerDe))
+        ;
+//                .foreach((windowedStationId, trackByTrainId) -> {
+//                        logger.info("Windowed Station: "+windowedStationId.window().startTime()+" -> "+windowedStationId.window().endTime()+ " : " + windowedStationId.key());
+//                    List<String> trains = new ArrayList<>(trackByTrainId.keySet());
+//                    trains.sort(String::compareTo);
+//                    String headers = String.join(" | ", trains);
+//                    logger.info(headers);
+//                    List<String> tracks = trains.stream().map((t) -> trackByTrainId.get(t).toString()).collect(Collectors.toList());
+//                    logger.info(String.join(" | ", tracks));
+//                });
+
+
 
         return builder.build();
     }

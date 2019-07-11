@@ -2,6 +2,7 @@ package com.kinnack.dvr.kafka.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.kafka.streams.kstream.internals.Change;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -46,14 +47,6 @@ public class ChangeEvent {
         return now;
     }
 
-    @JsonIgnore
-    public boolean isDropped() {
-        return action.equals(DROPPED);
-    }
-    @JsonIgnore
-    public boolean isAdded() {
-        return action.equals(ADDED);
-    }
 
     public static ChangeEvent added(Departure departure) {
         return new ChangeEvent(ADDED, WINDOW, null, departure);
@@ -64,8 +57,8 @@ public class ChangeEvent {
     }
 
     public static Optional<ChangeEvent> changed(Departure was, Departure now) {
-        Map<String, Optional<String>> oldMap = new DepartureOps(was).toMap();
-        Map<String, Optional<String>> newMap = new DepartureOps(now).toMap();
+        Map<String, Optional<String>> oldMap = DepartureOps.toMap(was);
+        Map<String, Optional<String>> newMap = DepartureOps.toMap(now);
 
         String context = String.join("::", oldMap.entrySet().stream().reduce(new ArrayList<String>(), (accum, next) -> {
             if (!next.getValue().equals(newMap.get(next.getKey())))  {
@@ -107,23 +100,42 @@ public class ChangeEvent {
                 '}';
     }
 
-    private static class DepartureOps {
-        private Departure departure;
+    public static class ChangeEventOps {
 
-        public DepartureOps(Departure departure) {
-            this.departure = departure;
+        public static boolean isDropped(ChangeEvent event) {
+            return event.action.equals(DROPPED);
+        }
+        public static boolean isAdded(ChangeEvent event) {
+            return event.action.equals(ADDED);
+        }
+        public static boolean isCancelled(ChangeEvent event) {
+            return Optional.ofNullable(event.now).map(DepartureOps::isCancelled).orElse(false) ||
+                   Optional.ofNullable(event.was).map(DepartureOps::isCancelled).orElse(false);
+
+        }
+        public static String getTrainId(ChangeEvent event) {
+            if (event.was != null) return event.was.getTrainId();
+            return event.now.getTrainId();
         }
 
-        public Map<String, Optional<String>> toMap() {
+    }
+
+    private static class DepartureOps {
+
+        public static Map<String, Optional<String>> toMap(Departure d) {
             return Map.of(
-                    "departsAt", Optional.ofNullable(departure.getDepartsAt()),
-                    "dest", Optional.ofNullable(departure.getDest()),
-                    "track", Optional.ofNullable(departure.getTrack()),
-                    "line", Optional.ofNullable(departure.getLine()),
-                    "trainId", Optional.ofNullable(departure.getTrainId()),
-                    "status", Optional.ofNullable(departure.getStatus()),
-                    "color", Optional.ofNullable(departure.getColor())
+                    "departsAt", Optional.ofNullable(d.getDepartsAt()),
+                    "dest", Optional.ofNullable(d.getDest()),
+                    "track", Optional.ofNullable(d.getTrack()),
+                    "line", Optional.ofNullable(d.getLine()),
+                    "trainId", Optional.ofNullable(d.getTrainId()),
+                    "status", Optional.ofNullable(d.getStatus()),
+                    "color", Optional.ofNullable(d.getColor())
             );
+        }
+
+        public static boolean isCancelled(Departure d) {
+            return d.getStatus().toLowerCase().indexOf("cancel") > -1;
         }
     }
 }
