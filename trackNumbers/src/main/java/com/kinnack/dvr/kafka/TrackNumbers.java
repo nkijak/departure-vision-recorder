@@ -3,9 +3,7 @@ package com.kinnack.dvr.kafka;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.kinnack.dvr.kafka.models.*;
-import com.kinnack.dvr.kafka.models.ChangeEvent.ChangeEventOps;
 import org.apache.commons.cli.*;
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
@@ -19,18 +17,14 @@ import org.apache.kafka.streams.kstream.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.kinnack.dvr.kafka.models.ChangeEvent.ChangeEventOps.*;
 import static com.kinnack.dvr.kafka.models.JsonPOJODeserializer.*;
 import static java.util.Spliterators.spliteratorUnknownSize;
-import static java.util.stream.Stream.*;
 
-import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.Stores;
-import org.apache.kafka.streams.state.internals.KeyValueStoreBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +49,7 @@ public class TrackNumbers {
     final public Serde<ChangeEvent> changeEventSerDe;
     final public Serde<JsonNode> jsonSerde;
     final public Serde<HashMap<String, String>> trackCountSerDe;
+    //TODO these should be generic Map<K,V> not specific (having trouble getting compiler to agree though..)
     final public Serde<HashMap<String, HashMap<String, Integer>>> trackStatsSerDe;
 
     public TrackNumbers() {
@@ -115,6 +110,65 @@ public class TrackNumbers {
         return streamByTrainId;
     }
 
+    public KStream<String, String> determineTrackNumber(KStream<String, ChangeEvent> diffStream) {
+        return diffStream
+                .filter((stationId, changeEvent) -> isDropped(changeEvent))
+                .groupByKey(Grouped.with(Serdes.String(), changeEventSerDe))
+                .windowedBy(TimeWindows.of(Duration.ofDays(1)))
+                .aggregate(
+                        () -> new HashMap<String, String>(),
+                        (stationId, event, trackByTrainId) -> {
+                            String track = Optional.ofNullable(event.getWas().getTrack()).orElseGet(() -> {
+                                if (isCancelled(event)) return "-1";
+                                return "-2";
+                            });
+                            trackByTrainId.put(getTrainId(event), track);
+                            return trackByTrainId;
+                        },
+                        Materialized.with(Serdes.String(), trackCountSerDe)
+                )
+                .toStream()
+                .flatMap((windowedStationId, trackByTrainId) ->
+                        trackByTrainId.entrySet().stream()
+                                .map((entry) ->
+                                        KeyValue.pair(
+                                                String.join("::", List.of(windowedStationId.window().startTime().toString(), windowedStationId.key(), entry.getKey())),
+                                                entry.getValue()
+                                        ))
+                                .collect(Collectors.toList())
+                );
+    }
+
+    public KStream<String, HashMap<String, HashMap<String, Integer>>> aggregateTrackCounts(KStream<String, String> trackListings) {
+        return trackListings
+                .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+                .windowedBy(TimeWindows.of(Duration.ofDays(5)).advanceBy(Duration.ofDays(1)))
+                .aggregate(
+                        () -> new HashMap<String, HashMap<String, Integer>>(),
+                        (dayStationTrainId, track, stats) -> {
+                            String[] parts = dayStationTrainId.split("::");
+                            String trainId = parts[parts.length - 1];
+                            HashMap<String, Integer> tracks = stats.getOrDefault(trainId, new HashMap<>());
+                            int count = tracks.getOrDefault(track, 0);
+                            tracks.put(track, count + 1);
+                            stats.put(trainId, tracks);
+                            return stats;
+                        },
+                        Materialized.with(Serdes.String(), trackStatsSerDe)
+                )
+                .toStream()
+                .map((k, v) -> KeyValue.pair(k.key(), v))
+                .peek((k, stats) -> {
+                    logger.info("when::stream::train="+k);
+                    for (Map.Entry<String, HashMap<String, Integer>> entry: stats.entrySet()) {
+                        logger.info("outer key="+ entry.getKey());
+                        for (Map.Entry<String, Integer> trackCount: entry.getValue().entrySet()) {
+                            logger.info(trackCount.getValue() + " times on track "+trackCount.getKey());
+                        }
+                    }
+                });
+    }
+
 
     public Topology getStreamTopology(final String inTopic) {
         final StreamsBuilder builder = new StreamsBuilder();
@@ -150,52 +204,7 @@ public class TrackNumbers {
 
         diffStream.to(inTopic + ".diff", Produced.with(Serdes.String(), changeEventSerDe));
 
-        diffStream
-                .filter((stationId, changeEvent) -> isDropped(changeEvent))
-                .groupByKey(Grouped.with(Serdes.String(), changeEventSerDe))
-                .windowedBy(TimeWindows.of(Duration.ofDays(1)))
-                .aggregate(
-                        () -> new HashMap<String, String>(),
-                        (stationId, event, trackByTrainId) -> {
-                            String track = Optional.ofNullable(event.getWas().getTrack()).orElseGet(() -> {
-                                if (isCancelled(event)) return "-1";
-                                return "-2";
-                            });
-                            trackByTrainId.put(getTrainId(event), track);
-                            return trackByTrainId;
-                        },
-                        Materialized.with(Serdes.String(), trackCountSerDe)
-                )
-                .toStream()
-                .flatMap((windowedStationId, trackByTrainId) ->
-                        trackByTrainId.entrySet().stream()
-                                .map((entry) ->
-                                        KeyValue.pair(
-                                                String.join("::", List.of(windowedStationId.window().startTime().toString(), windowedStationId.key(), entry.getKey())),
-                                                entry.getValue()
-                                        ))
-                                .collect(Collectors.toList())
-                )
-                .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-                .windowedBy(TimeWindows.of(Duration.ofDays(5)).advanceBy(Duration.ofDays(1)))
-                .aggregate(
-                        () -> new HashMap<String, HashMap<String, Integer>>(),
-                        (dayStationTrainId, track, stats) -> {
-                            String[] parts = dayStationTrainId.split("::");
-                            String trainId = parts[parts.length - 1];
-                            HashMap<String, Integer> tracks = stats.getOrDefault(trainId, new HashMap<>());
-                            int count = tracks.getOrDefault(track, 0);
-                            tracks.put(track, count + 1);
-                            stats.put(trainId, tracks);
-                            return stats;
-                        },
-                        Materialized.with(Serdes.String(), trackStatsSerDe)
-                )
-                .toStream()
-                .map((k, v) -> KeyValue.pair(k.key(), v))
-                .peek((k, stats) -> {
-                    logger.info(k);
-                })
+        aggregateTrackCounts(determineTrackNumber(diffStream))
                 .to(inTopic + ".hopping_track_stats", Produced.with(Serdes.String(), trackStatsSerDe))
         ;
 //                .foreach((windowedStationId, trackByTrainId) -> {
