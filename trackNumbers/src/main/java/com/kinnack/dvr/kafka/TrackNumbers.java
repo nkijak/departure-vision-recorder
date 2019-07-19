@@ -119,8 +119,8 @@ public class TrackNumbers {
                         () -> new HashMap<String, String>(),
                         (stationId, event, trackByTrainId) -> {
                             String track = Optional.ofNullable(event.getWas().getTrack()).orElseGet(() -> {
-                                if (isCancelled(event)) return "-1";
-                                return "-2";
+                                if (isCancelled(event)) return "cancelled";
+                                return "unknown";
                             });
                             trackByTrainId.put(getTrainId(event), track);
                             return trackByTrainId;

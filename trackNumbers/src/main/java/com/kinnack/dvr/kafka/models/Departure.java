@@ -3,6 +3,7 @@ package com.kinnack.dvr.kafka.models;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class Departure {
     private String departsAt;
@@ -68,6 +69,7 @@ public class Departure {
     }
 
     public String getTrack() {
+        if (track == null || track.isEmpty()) return null;
         return track;
     }
 
@@ -109,14 +111,14 @@ public class Departure {
 
     public static Departure fromJsonNode(JsonNode data) {
         return new Departure(
-            data.get("departs_at").asText(),
-            data.get("dest").asText(),
-            data.get("track").asText(),
-            data.get("line").asText(),
-            data.get("train_id").asText(),
-            data.get("status").asText(),
-            data.get("at").asText(),
-            data.get("color").asText()
+            Optional.ofNullable(data.get("departs_at")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("dest")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("track")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("line")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("train_id")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("status")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("at")).map(JsonNode::textValue).orElse(null),
+            Optional.ofNullable(data.get("color")).map(JsonNode::textValue).orElse(null)
         );
     }
 

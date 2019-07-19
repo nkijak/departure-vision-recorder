@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -76,11 +78,10 @@ public class TrackNumbersTest {
         testDriver.pipeInput(sourceFactory.create("test.dvr", "", step3));
         outputRecord = testDriver.readOutput("test.dvr.diff", new StringDeserializer(), trackNumbers.changeEventSerDe.deserializer());
         OutputVerifier.compareKeyValue(outputRecord, "test.dvr", ChangeEvent.dropped(Departure.fromJsonNode(step2.get("body").withArray("departures").get(0))));
-
+        testDriver.close();
     }
 
-    @Test
-    public void diffToTrackListingOutputsTracks() throws IOException {
+    private void testDiffToTrackListing(Supplier<ChangeEvent> setupChangeEvent, String expectedKey, String expectedValue) {
         final String input = "test.in";
         final String output = "test.out";
         StreamsBuilder builder = new StreamsBuilder();
@@ -89,6 +90,16 @@ public class TrackNumbersTest {
                         Consumed.with(Serdes.String(), trackNumbers.changeEventSerDe))
         ).to(output, Produced.with(Serdes.String(), Serdes.String()));
         setup(builder.build(props));
+        ConsumerRecordFactory<String, ChangeEvent> source = new ConsumerRecordFactory<>(new StringSerializer(), trackNumbers.changeEventSerDe.serializer());
+        testDriver.pipeInput(source.create(input, "stationId", setupChangeEvent.get(), 0L));
+        Deserializer<String> sd = new StringDeserializer();
+        ProducerRecord<String, String> outputRecord = testDriver.readOutput(output, sd, sd);
+        OutputVerifier.compareKeyValue(outputRecord, expectedKey, expectedValue);
+        testDriver.close();
+    }
+
+    @Test
+    public void diffToTrackListing_OutputsTracks() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode trackListing = mapper
                 .readValue(getClass().getClassLoader().getResource("diffStream/02statuschange.json"), JsonNode.class)
@@ -97,10 +108,58 @@ public class TrackNumbersTest {
                 .get(0);
         ConsumerRecordFactory<String, ChangeEvent> source = new ConsumerRecordFactory<>(new StringSerializer(), trackNumbers.changeEventSerDe.serializer());
         ChangeEvent removed = ChangeEvent.dropped(Departure.fromJsonNode(trackListing));
-        testDriver.pipeInput(source.create(input, "stationId", removed, 0L));
-        Deserializer<String> sd = new StringDeserializer();
-        ProducerRecord<String, String> outputRecord = testDriver.readOutput(output, sd, sd);
-        OutputVerifier.compareKeyValue(outputRecord, "1970-01-01T00:00:00Z::stationId::trainId", "track");
+        testDiffToTrackListing(() -> removed, "1970-01-01T00:00:00Z::stationId::trainId", "track");
+    }
+
+    @Test
+    public void diffToTrackListing_OutputsCancelledCode() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode trackListing = mapper
+                .readValue(getClass().getClassLoader().getResource("diffStream/02statuschange.json"), JsonNode.class)
+                .get("body")
+                .withArray("departures")
+                .get(0);
+        Departure departure = Departure.fromJsonNode(trackListing);
+        departure.setStatus("CANCELLED");
+        departure.setTrack(null);
+
+        ConsumerRecordFactory<String, ChangeEvent> source = new ConsumerRecordFactory<>(new StringSerializer(), trackNumbers.changeEventSerDe.serializer());
+        ChangeEvent removed = ChangeEvent.dropped(departure);
+        testDiffToTrackListing(() -> removed, "1970-01-01T00:00:00Z::stationId::trainId", "cancelled");
+    }
+
+    @Test
+    public void diffToTrackListing_OutputsUnknownCodeForDisapperanceNullTrack() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode trackListing = mapper
+                .readValue(getClass().getClassLoader().getResource("diffStream/02statuschange.json"), JsonNode.class)
+                .get("body")
+                .withArray("departures")
+                .get(0);
+        Departure departure = Departure.fromJsonNode(trackListing);
+        departure.setStatus("");
+        departure.setTrack(null);
+
+        ConsumerRecordFactory<String, ChangeEvent> source = new ConsumerRecordFactory<>(new StringSerializer(), trackNumbers.changeEventSerDe.serializer());
+        ChangeEvent removed = ChangeEvent.dropped(departure);
+        testDiffToTrackListing(() -> removed, "1970-01-01T00:00:00Z::stationId::trainId", "unknown");
+    }
+
+    @Test
+    public void diffToTrackListing_OutputsUnknownCodeForDisapperanceEmptyTrack() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode trackListing = mapper
+                .readValue(getClass().getClassLoader().getResource("diffStream/02statuschange.json"), JsonNode.class)
+                .get("body")
+                .withArray("departures")
+                .get(0);
+        Departure departure = Departure.fromJsonNode(trackListing);
+        departure.setStatus("");
+        departure.setTrack("");
+
+        ConsumerRecordFactory<String, ChangeEvent> source = new ConsumerRecordFactory<>(new StringSerializer(), trackNumbers.changeEventSerDe.serializer());
+        ChangeEvent removed = ChangeEvent.dropped(departure);
+        testDiffToTrackListing(() -> removed, "1970-01-01T00:00:00Z::stationId::trainId", "unknown");
     }
 
 
