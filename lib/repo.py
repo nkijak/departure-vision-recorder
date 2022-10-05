@@ -2,7 +2,6 @@ import logging
 import couchdb
 from couchdb.loader import load_design_doc
 from couchdb.mapping import Document, TextField, IntegerField, DateTimeField, DictField, Mapping
-from couchdb.loader import load_design_doc
 from couchdb.design import ViewDefinition
 
 from lib.parse_utils import Departure 
