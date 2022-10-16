@@ -172,4 +172,9 @@ Developed under New York Penn but theoretically should be able to track any with
 <option value="WB">Woodbridge</option>
 <option value="WL">Woodcliff Lake</option>
 ```
+# NJTransit redesign
+this lists all the functions:
+https://traindata.njtransit.com/NJTSignData.asmx?username=DV4&password=ekd0J4MsYgmN56&station=TR&status=n
 
+here's an interesting late train list on all lines
+https://traindata.njtransit.com/NJTSignData.asmx/getLateTrainJSON?username=DV4&password=ekd0J4MsYgmN56&station=TR&status=n&NJTOnly=true

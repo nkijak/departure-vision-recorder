@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: departure-vision-recorder
+  labels:
+    app: dvr-monolith
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dvr-monolith
+  template:
+    metadata:
+      annotations:
+        config.linkerd.io/skip-outbound-ports: "9092"
+      labels:
+        app: dvr-monolith
+    spec:
+      containers:
+        - name: kafka-proxy
+          metadata:
+            labels:
+              app.kubernetes.io/name: kafka-proxy
+          image: registry.kinnack.com/departurevision/kafka-proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: "KAFKA"
+              value: "chromebox.supersixfour:9092"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+              httpHeaders:
+                - name: Health-Check
+                  value: k8s
+              initialDelaySeconds: 3
+              periodSeconds: 3

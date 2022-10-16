@@ -1,14 +1,5 @@
+FROM python:3.6-alpine
 
-FROM armhf/python:3.6-alpine
-
-# Alternatively use ADD https:// (which will not be cached by Docker builder)
-RUN apk --no-cache add curl \
-    && echo "Pulling watchdog binary from Github." \
-    && curl -sSLf https://github.com/openfaas-incubator/of-watchdog/releases/download/0.5.0/of-watchdog-armhf > /usr/bin/fwatchdog \
-    && chmod +x /usr/bin/fwatchdog \
-    && apk del curl --no-cache
-
-RUN apk --no-cache add musl-dev gcc make openssl-dev libffi-dev
 
 WORKDIR /root/
 
@@ -18,11 +9,4 @@ COPY index.py           .
 
 ENV fprocess="python index.py"
 
-ENV cgi_headers="true"
-ENV mode="http"
-ENV upstream_url="http://127.0.0.1:5000"
-
-
-HEALTHCHECK --interval=5s CMD [ -e /tmp/.lock ] || exit 1
-
-CMD ["fwatchdog"]
+CMD ["python", "index.py"]

@@ -20,6 +20,7 @@ NYP="NY"
 CACHE_PATH="dv_data"
 BUCKET="com.kinnack.departure-vision-recorder"
 S3_HOST=os.environ.get('S3_HOST', 'http://192.168.1.211:9000')
+KAFKA_PROXY=os.environ.get('KAFKA_PROXY', 'http://gateway:8080/function/kafka-proxy/topic/{}.dvr')
 
 STYLE_REGEX=re.compile('.+background-color:(\w+);')
 
@@ -73,7 +74,7 @@ def handle(req):
     event = get_dv_page(req) 
     data = json.dumps(event, cls=DepartureEncoder) 
     print(data)
-    r = urllib.request.Request('http://gateway:8080/function/kafka-proxy/topic/{}.dvr'.format(req.lower()), headers={'Content-Type': 'application/json'}, data=data.encode('utf-8'))
+    r = urllib.request.Request(KAFKA_PROXY.format(req.lower()), headers={'Content-Type': 'application/json'}, data=data.encode('utf-8'))
     with urllib.request.urlopen(r) as post:
         print(post.read().decode('utf-8'))
     return data
@@ -151,7 +152,8 @@ def get_dv_page(station=NYP, cache_path=CACHE_PATH, skip_cache=False):
 
     html = fetch_dv_page(station)
     when = datetime.utcnow()
-    latest = cache_dv_page(html, station=station, path=cache_path)
+    #latest = cache_dv_page(html, station=station, path=cache_path)
+    latest = "/none/disabled"
     departures = list_departures(html, at=when)
 
     return {
@@ -175,8 +177,9 @@ def extract_timestamp(filename):
 if __name__ == '__main__':
     import sys 
 
-    station = NYP
     if len(sys.argv) > 1:
         station = sys.argv[1]
+    else:
+        station = os.environ.get('STATION', NYP)
     result = handle(req=station)
     print(result)

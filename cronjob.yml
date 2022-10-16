@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: departure-vision-recorder
+spec:
+  schedule: "*/2 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: dvr-tr
+            image: registry.kinnack.com/departurevision/monolith:latest
+            imagePullPolicy: IfNotPresent
+            environment:
+              - "STATION=TR"
+              - "DB_HOST=couchdb"
+              - "DB_O
+          restartPolicy: OnFailure

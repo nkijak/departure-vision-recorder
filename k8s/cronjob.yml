@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scraper-tr
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: dvr-tr
+              image: registry.kinnack.com/departurevision/monolith:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: STATION
+                  value: TR
+                - name: KAFKA_PROXY
+                  value: "http://kafka-proxy/topic/{}.dvr"
+          restartPolicy: OnFailure
+
+---
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scraper-ny
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: dvr-ny
+              image: registry.kinnack.com/departurevision/monolith:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: STATION
+                  value: NY
+                - name: KAFKA_PROXY
+                  value: "http://kafka-proxy/topic/{}.dvr"
+          restartPolicy: OnFailure

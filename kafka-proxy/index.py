@@ -7,6 +7,7 @@ from waitress import serve
 app = Flask(__name__)
 
 broker=os.environ.get('KAFKA', '192.168.1.211:9092')
+print(f"broker at {broker}")
 p = KafkaProducer(bootstrap_servers=broker)
 
 
@@ -25,6 +26,10 @@ def catch_all(path):
     except KafkaError as ke:
         print('ERROR topic: {}, key: {}, data:{}'.format(path, key, request.data))
         raise ke 
+
+@app.route('/health', methods=['GET'])
+def health():
+    return 'UP'
 
 if __name__ == '__main__':
     serve(app, listen='*:5000')

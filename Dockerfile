@@ -1,6 +1,11 @@
 FROM python:3.6-alpine3.6
 
-MAINTAINER nkijak@gmail.com
+ARG BUILD_DATE="1970-01-01"
+ARG VCS_REF="n/a"
+
+LABEL org.opencontainers.image.authors="nkijak@gmail.com"
+LABEL build.date=$BUILD_DATE
+LABEL build.ref=$VCS_REF
 
 WORKDIR /usr/src/app
 

@@ -6,14 +6,9 @@ import sys
 import os
 
 def db_host_port():
-    try:
-        host = os.environ['DB_HOST']
-    except KeyError:
-        host = "localhost"
-    try:
-        port = os.environ['DB_PORT']
-    except KeyError:
-        port = 5984
+    host = os.environ.get('DB_HOST', "localhost")
+    port = os.environ.get('DB_PORT', "5984")
+    print(f"db at {host}:{port}")
     return (host, port) 
 
 if __name__=="__main__":
