@@ -16,6 +16,6 @@
     "table": "^5.4.0"
   },
   "devDependencies": {
-    "mocha": "^6.1.4"
+    "mocha": "^6.2.3"
   }
 }
